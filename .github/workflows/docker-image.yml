@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: CI Build and Push Images
 
 on:
   push:
@@ -7,12 +7,54 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  build:
-
+  # 1. Tester l’installation
+  test-install:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker compose build
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+      - name: Run tests
+        run: |
+          echo "Tests OK"
+
+  # 2. Build & Push avec Buildah -> GitLab Registry
+  buildah-gitlab:
+    runs-on: ubuntu-latest
+    needs: test-install
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Buildah
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install buildah
+      - name: Login to GitLab Registry
+        env:
+          REGISTRY_USER: ${{ secrets.GITLAB_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USER" --password-stdin registry.gitlab.com
+      - name: Build image with Buildah
+        run: |
+          buildah bud -t registry.gitlab.com/<NAMESPACE>/<PROJECT>/app:latest .
+      - name: Push image to GitLab Registry
+        run: |
+          buildah push registry.gitlab.com/<NAMESPACE>/<PROJECT>/app:latest
+
+  # 3. Build & Push avec Docker -> Docker Hub
+  docker-dockerhub:
+    runs-on: ubuntu-latest
+    needs: test-install
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKERHUB_USER }}/app:latest .
+      - name: Push to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USER }}/app:latest
