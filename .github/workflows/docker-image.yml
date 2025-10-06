@@ -36,9 +36,11 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           buildah login -u "$REGISTRY_USER" --password "$REGISTRY_PASSWORD" ghcr.io
+      - name: Set working directory
+        run: cd $GITHUB_WORKSPACE
       - name: Build image with Buildah
         run: |
-          buildah bud -t ghcr.io/${{ github.repository }}/app:latest $GITHUB_WORKSPACE
+          buildah bud -t ghcr.io/${{ github.repository }}/app:latest
       - name: Push image to GitHub Container Registry
         run: |
           buildah push ghcr.io/${{ github.repository }}/app:latest
