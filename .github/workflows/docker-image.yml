@@ -35,13 +35,15 @@ jobs:
           REGISTRY_USER: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          buildah login -u "$REGISTRY_USER" --password "$REGISTRY_PASSWORD" ghcr.io
+          echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USER" --password-stdin ghcr.io
       - name: Build image with Buildah
         run: |
-          buildah bud -f Dockerfile -t ghcr.io/${{ github.repository_owner }}/app:latest .
+          IMAGE_NAME=$(echo "ghcr.io/${{ github.repository_owner }}/app:latest" | tr '[:upper:]' '[:lower:]')
+          buildah bud -f Dockerfile -t "$IMAGE_NAME" .
       - name: Push image to GitHub Container Registry
         run: |
-          buildah push ghcr.io/${{ github.repository_owner }}/app:latest
+          IMAGE_NAME=$(echo "ghcr.io/${{ github.repository_owner }}/app:latest" | tr '[:upper:]' '[:lower:]')
+          buildah push "$IMAGE_NAME"
 
   # 3. Build & Push avec Docker -> Docker Hub
   docker-dockerhub:
