@@ -35,7 +35,7 @@ jobs:
           REGISTRY_USER: Bpolig56
           REGISTRY_PASSWORD: ${{ secrets.GITLAB_TOKEN }}
         run: |
-          echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USER" --password-stdin registry.gitlab.com
+          echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USER" --password registry.gitlab.com
       - name: Build image with Buildah
         run: |
           buildah bud -t registry.gitlab.com/<NAMESPACE>/<PROJECT>/app:latest .
@@ -54,7 +54,7 @@ jobs:
         with:
           username: bpolig56
           password: dckr_pat_59jdiYw6Sms2wrVp9ksBcfvmmeg
-      - name: Build Docker image
-        run: docker build -t bpolig56/app:latest .
+      - name: Build Docker images
+        run: docker compose build
       - name: Push to Docker Hub
         run: docker push bpolig56/app:latest
