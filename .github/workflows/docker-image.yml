@@ -26,25 +26,36 @@ jobs:
     needs: test-install
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Debug - List files
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Files in current directory:"
+          ls -la
+      
       - name: Install Buildah
         run: |
           sudo apt-get update
           sudo apt-get -y install buildah
+          
       - name: Login to GitHub Container Registry
         env:
           REGISTRY_USER: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USER" --password-stdin ghcr.io
+          
       - name: Build image with Buildah
         run: |
           IMAGE_NAME=$(echo "ghcr.io/${{ github.repository_owner }}/app:latest" | tr '[:upper:]' '[:lower:]')
-          buildah bud -f Dockerfile -t "$IMAGE_NAME" .
+          buildah bud -t "$IMAGE_NAME" .
+          
       - name: Push image to GitHub Container Registry
         run: |
           IMAGE_NAME=$(echo "ghcr.io/${{ github.repository_owner }}/app:latest" | tr '[:upper:]' '[:lower:]')
           buildah push "$IMAGE_NAME"
-
+          
   # 3. Build & Push avec Docker -> Docker Hub
   docker-dockerhub:
     runs-on: ubuntu-latest
