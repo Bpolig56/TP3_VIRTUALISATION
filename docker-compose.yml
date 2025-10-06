@@ -2,16 +2,18 @@ services:
   app1-fastapi:
     build:
       context: ./app1/backend
+    image: bpolig56/app1-fastapi:latest
     ports:
       - "8000:8000"
     networks:
      - app1
     depends_on:
       - app1-database
-  
+
   app1-database:
     build:
       context: ./app1/database
+    image: bpolig56/app1-database:latest
     ports:
       - "27017:27017"
     networks:
@@ -20,6 +22,7 @@ services:
   app2-fastapi:
     build:
       context: ./app2/backend
+    image: bpolig56/app2-fastapi:latest
     ports:
       - "8001:8000"
     networks:
@@ -27,7 +30,7 @@ services:
     depends_on:
       app2-database:
         condition: service_healthy
-  
+
   app2-database:
     image: mysql:latest
     environment:
@@ -46,19 +49,6 @@ services:
       retries: 5
     networks:
      - app2
-
-  lolsauce-phpmyadmin: 
-    image: phpmyadmin
-    environment:
-      PMA_HOST: app2-database
-      MYSQL_ROOT_PASSWORD: "root"
-    ports:
-      - "8080:80"
-    depends_on:
-      - app2-database
-    networks:
-     - app2
-
 
 networks:
   app1:

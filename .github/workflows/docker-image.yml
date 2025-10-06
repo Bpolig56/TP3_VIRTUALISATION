@@ -20,8 +20,8 @@ jobs:
         run: |
           echo "Tests OK"
 
-  # 2. Build & Push avec Buildah -> GitLab Registry
-  buildah-gitlab:
+  # 2. Build & Push avec Buildah -> Github Registry
+  buildah-github:
     runs-on: ubuntu-latest
     needs: test-install
     steps:
@@ -30,18 +30,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install buildah
-      - name: Login to GitLab Registry
+      - name: Login to GitHub Container Registry
         env:
-          REGISTRY_USER: Bpolig56
-          REGISTRY_PASSWORD: ${{ secrets.GITLAB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          buildah login -u "$REGISTRY_USER" --password "$REGISTRY_PASSWORD" registry.gitlab.com
+          buildah login -u "$REGISTRY_USER" --password "$REGISTRY_PASSWORD" ghcr.io
       - name: Build image with Buildah
         run: |
-          buildah bud -t registry.gitlab.com/Bpolig56/TP3_VIRTUALISATION/app:latest .
-      - name: Push image to GitLab Registry
+          buildah bud -t ghcr.io/${{ github.repository }}/app:latest .
+      - name: Push image to GitHub Container Registry
         run: |
-          buildah push registry.gitlab.com/Bpolig56/TP3_VIRTUALISATION/app:latest
+          buildah push ghcr.io/${{ github.repository }}/app:latest
 
   # 3. Build & Push avec Docker -> Docker Hub
   docker-dockerhub:
@@ -55,6 +55,6 @@ jobs:
           username: bpolig56
           password: dckr_pat_59jdiYw6Sms2wrVp9ksBcfvmmeg
       - name: Build Docker images
-        run: docker compose build
+        run: docker compose build app1-fastapi app1-database app2-fastapi app2-database
       - name: Push to Docker Hub
-        run: docker push
+        run: docker compose push
