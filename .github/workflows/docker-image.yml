@@ -21,27 +21,40 @@ jobs:
           echo "Tests OK"
 
   # 2. Build & Push avec Buildah -> Github Registry
+  # 2. Build & Push avec Buildah -> Github Registry
   buildah-github:
     runs-on: ubuntu-latest
     needs: test-install
     steps:
       - uses: actions/checkout@v4
+      
       - name: Install Buildah
         run: |
           sudo apt-get update
           sudo apt-get -y install buildah
+          
       - name: Login to GitHub Container Registry
         env:
           REGISTRY_USER: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          buildah login -u "$REGISTRY_USER" --password "$REGISTRY_PASSWORD" ghcr.io
-      - name: Build image with Buildah
+          echo "$REGISTRY_PASSWORD" | buildah login -u "$REGISTRY_USER" --password-stdin ghcr.io
+          
+      - name: Build and Push images with Buildah
         run: |
-          buildah bud -t ghcr.io/app:latest
-      - name: Push image to GitHub Container Registry
-        run: |
-          buildah push ghcr.io/app:latest
+          REPO=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          
+          # Build app1-fastapi
+          buildah bud -f ./app1/backend/Dockerfile -t ghcr.io/$REPO/app1-fastapi:latest ./app1/backend
+          buildah push ghcr.io/$REPO/app1-fastapi:latest
+          
+          # Build app1-database
+          buildah bud -f ./app1/database/Dockerfile -t ghcr.io/$REPO/app1-database:latest ./app1/database
+          buildah push ghcr.io/$REPO/app1-database:latest
+          
+          # Build app2-fastapi
+          buildah bud -f ./app2/backend/Dockerfile -t ghcr.io/$REPO/app2-fastapi:latest ./app2/backend
+          buildah push ghcr.io/$REPO/app2-fastapi:latest
 
   # 3. Build & Push avec Docker -> Docker Hub
   docker-dockerhub:
